@@ -8,6 +8,14 @@ Turn your race data and personal notes into a blog-ready race report, powered by
 
 ![Running Lore report](docs/screenshot-report.png)
 
+## Features
+
+- **GPX import** -- drop a `.gpx` file and the form auto-fills race name, date, distance, time, pace, splits, heart rate, and elevation
+- **Race photos** -- upload up to 5 photos (JPEG, PNG, WebP, GIF); Claude sees them and weaves them into the report
+- **Four tones** -- Celebratory, Honest, Training Log, or Storytelling
+- **Streaming output** -- report text streams in as Claude writes it, no waiting for the full response
+- **Copy markdown** -- one click copies the full markdown, ready to paste into any blog
+
 ## Project Structure
 
 ```
@@ -39,22 +47,31 @@ The client runs at `http://localhost:5173` with an API proxy to the server at `h
 
 ## How It Works
 
-1. Enter your race data (name, distance, time, pace, splits, etc.)
-2. Add bullet-point notes about your experience
-3. Pick a tone (celebratory, honest, training-log, or storytelling)
-4. Hit Generate and get a markdown race report ready for your blog
-5. Copy the markdown and paste it into WordPress/your blog
+1. **Fill in your race data** manually, or drop a GPX file to auto-populate everything
+2. **Add personal notes** as bullet points -- the details that make the report yours
+3. **Upload race photos** (optional) -- Claude will reference what it sees in the narrative
+4. **Pick a tone** and hit Generate
+5. **Copy the markdown** and paste it into WordPress, Ghost, or anywhere else
 
 ## Tech Stack
 
 - **Monorepo:** npm workspaces
 - **Shared:** TypeScript interfaces and constants
-- **Server:** Express, TypeScript, Zod validation, Anthropic SDK (Claude Sonnet)
-- **Client:** React 19, TypeScript, Vite, react-markdown
+- **Server:** Express, TypeScript, Zod validation, Anthropic SDK (Claude Sonnet), streaming responses
+- **Client:** React 19, TypeScript, Vite, react-markdown, GPX parsing via DOMParser
+
+## Security
+
+- Helmet security headers
+- Rate limited to 10 requests/minute per IP on the generate endpoint
+- All text inputs sanitized (HTML tags stripped via Zod transforms)
+- Images validated by media type and capped at 5 per request
+- Request body limit of 20 MB
+- Startup fails fast if `ANTHROPIC_API_KEY` is missing
 
 ## API
 
-`POST /api/report/generate`
+`POST /api/report/generate` -- returns a streaming plain-text response (markdown)
 
 ```json
 {
@@ -75,13 +92,14 @@ The client runs at `http://localhost:5173` with an API proxy to the server at `h
     "Cramp at mile 18 but worked through it",
     "New PR by 4 minutes"
   ],
-  "tone": "storytelling"
+  "tone": "storytelling",
+  "images": [
+    { "data": "<base64>", "mediaType": "image/jpeg" }
+  ]
 }
 ```
 
 ## Tests
-
-Run the full suite with:
 
 ```bash
 npm test
