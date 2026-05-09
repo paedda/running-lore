@@ -1,0 +1,36 @@
+.tone-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.tone-option {
+  text-align: center;
+  padding: 0.65rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 500;
+  background: var(--input-bg);
+  transition: all 0.15s;
+  color: var(--text-muted);
+}
+
+.tone-option:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.tone-option.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .tone-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
