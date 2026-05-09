@@ -4,78 +4,19 @@ Every race has a story. Even the ugly ones.
 
 Turn your race data and personal notes into a blog-ready race report, powered by Claude.
 
+![Running Lore form](docs/screenshot-form.png)
+
+![Running Lore report](docs/screenshot-report.png)
+
 ## Project Structure
 
 ```
 running-lore/
-├── CLAUDE.md                 # Project docs for Claude Code
-├── README.md                 # Project docs for humans
-├── package.json              # Root workspace config, ties everything together
-├── package-lock.json         # Dependency lockfile
-├── tsconfig.base.json        # Shared TypeScript settings inherited by all packages
-├── vitest.config.ts          # Test runner config (defines server + client projects)
-├── .env.example              # Template for API key + port
-├── .gitignore                # Ignores node_modules, dist, .env, tsbuildinfo
-│
-└── packages/
-    ├── shared/               # THE GLUE -- types both sides agree on
-    │   ├── package.json
-    │   ├── tsconfig.json
-    │   └── src/
-    │       └── index.ts      # ActivityData, ReportRequest, ReportResponse, ReportTone, REPORT_TONES
-    │
-    ├── server/               # EXPRESS API -- takes form data, calls Claude, returns report
-    │   ├── package.json
-    │   ├── tsconfig.json
-    │   └── src/
-    │       ├── server.ts              # Express app setup, CORS, routes, health check
-    │       ├── validation.ts          # Zod schemas for request validation
-    │       ├── validation.test.ts
-    │       ├── routes/
-    │       │   └── report.ts          # POST /api/report/generate endpoint
-    │       └── services/
-    │           ├── reportGenerator.ts      # System prompt, buildPrompt(), parseResponse(), Claude API call
-    │           └── reportGenerator.test.ts
-    │
-    └── client/               # REACT FRONTEND -- the form UI + rendered report
-        ├── package.json
-        ├── tsconfig.json
-        ├── vite.config.ts             # Vite dev server + proxy /api -> localhost:3001
-        ├── index.html                 # Entry HTML (loads fonts, mounts React)
-        └── src/
-            ├── main.tsx               # React root render
-            ├── App.tsx                # Main component, wires state between child components
-            ├── App.css                # Layout, generate button, loading spinner
-            ├── styles.css             # CSS reset, variables (colors, fonts), utility classes
-            ├── test-setup.ts          # jest-dom matchers + cleanup for tests
-            ├── hooks/
-            │   ├── useReport.ts       # Fetch hook: POST to API, manages loading/result/error
-            │   └── useReport.test.ts
-            └── components/
-                ├── ActivityForm.tsx    # Race data inputs (name, date, distance, pace, etc.)
-                ├── ActivityForm.test.tsx
-                ├── NotesEditor.tsx     # Add/remove bullet-point notes
-                ├── NotesEditor.css
-                ├── NotesEditor.test.tsx
-                ├── ToneSelector.tsx    # Pick one of 4 report tones
-                ├── ToneSelector.css
-                ├── ToneSelector.test.tsx
-                ├── ReportOutput.tsx    # Renders markdown report + copy button
-                ├── ReportOutput.css
-                └── ReportOutput.test.tsx
+  packages/
+    shared/    # TypeScript types shared between server and client
+    server/    # Express API with Anthropic SDK
+    client/    # React + Vite frontend
 ```
-
-### Data Flow
-
-1. **Client** -- user fills out ActivityForm, adds notes in NotesEditor, picks a tone in ToneSelector, clicks Generate
-2. **useReport hook** -- POSTs `{ activity, notes, tone }` to `/api/report/generate` (Vite proxies this to port 3001)
-3. **Server route** (`routes/report.ts`) -- validates the request body with Zod
-4. **reportGenerator** -- builds a prompt from the data, sends it to Claude, parses the H1 title out of the markdown response
-5. **Back to client** -- ReportOutput renders the markdown and offers a "Copy Markdown" button
-
-### Why Three Packages?
-
-The shared package is the contract. If you change `ActivityData` there, TypeScript will catch mismatches in both the server and client at build time. It prevents the two sides from drifting apart.
 
 ## Quick Start
 

@@ -41,7 +41,7 @@ export const reportRequestSchema = z.object({
     .max(30, 'Maximum 30 notes allowed')
     .default([]),
   tone: z.enum(['celebratory', 'honest', 'training-log', 'storytelling']).default('storytelling'),
-  images: z.array(reportImageSchema).max(10, 'Maximum 10 images allowed').optional(),
+  images: z.array(reportImageSchema).max(5, 'Maximum 5 images allowed').optional(),
 });
 
 export type ValidatedReportRequest = z.infer<typeof reportRequestSchema>;

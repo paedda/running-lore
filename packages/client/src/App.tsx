@@ -33,7 +33,7 @@ export function App() {
       alert('Please fill in Race Name, Distance, and Finish Time.');
       return;
     }
-    generate({ activity, notes, tone, images: images.length > 0 ? images : undefined });
+    generate({ activity, notes, tone }, images.length > 0 ? images : undefined);
   };
 
   return (

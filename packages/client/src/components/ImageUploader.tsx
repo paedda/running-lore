@@ -8,6 +8,7 @@ interface ImageUploaderProps {
 }
 
 const MAX_DIMENSION = 1200;
+const MAX_PHOTOS = 5;
 const ACCEPTED = 'image/jpeg,image/png,image/webp,image/gif';
 
 function resizeAndEncode(file: File): Promise<ReportImage> {
@@ -50,7 +51,9 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFiles = async (files: FileList) => {
-    const incoming = Array.from(files);
+    const slots = MAX_PHOTOS - images.length;
+    if (slots <= 0) return;
+    const incoming = Array.from(files).slice(0, slots);
     const results = await Promise.all(incoming.map(resizeAndEncode));
     onChange([...images, ...results]);
   };
@@ -98,14 +101,18 @@ export function ImageUploader({ images, onChange }: ImageUploaderProps) {
         </div>
       )}
 
-      <div
-        className="image-dropzone"
-        onClick={() => inputRef.current?.click()}
-        onDrop={handleDrop}
-        onDragOver={(e) => e.preventDefault()}
-      >
-        {images.length === 0 ? 'Drop photos here or click to upload' : 'Add more photos'}
-      </div>
+      {images.length < MAX_PHOTOS ? (
+        <div
+          className="image-dropzone"
+          onClick={() => inputRef.current?.click()}
+          onDrop={handleDrop}
+          onDragOver={(e) => e.preventDefault()}
+        >
+          {images.length === 0 ? 'Drop photos here or click to upload' : `Add more photos (${MAX_PHOTOS - images.length} remaining)`}
+        </div>
+      ) : (
+        <p className="image-limit">Maximum of {MAX_PHOTOS} photos reached.</p>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import { rateLimit } from 'express-rate-limit';
+import morgan from 'morgan';
 import dotenv from 'dotenv';
 import reportRouter from './routes/report';
 
@@ -24,6 +25,7 @@ const app = express();
 app.use(helmet());
 app.use(cors({ origin: CLIENT_URL }));
 app.use(express.json({ limit: '20mb' }));
+app.use(morgan('dev'));
 
 const reportLimiter = rateLimit({
   windowMs: 60 * 1000,

@@ -14,6 +14,16 @@ const mockRequest = {
   tone: 'storytelling' as const,
 };
 
+function streamResponse(text: string, status = 200): Response {
+  const stream = new ReadableStream({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(text));
+      controller.close();
+    },
+  });
+  return new Response(stream, { status });
+}
+
 describe('useReport', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -46,7 +56,7 @@ describe('useReport', () => {
     expect(result.current.loading).toBe(true);
 
     await act(async () => {
-      resolveResponse(Response.json({ title: 'Test', report: 'Body' }));
+      resolveResponse(streamResponse('# Title\n\nBody'));
       await generatePromise!;
     });
 
@@ -54,8 +64,9 @@ describe('useReport', () => {
   });
 
   it('sets result on successful response', async () => {
-    const mockResponse = { title: 'Race Day', report: 'It was great.' };
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(Response.json(mockResponse));
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      streamResponse('# Race Day\n\nIt was great.'),
+    );
 
     const { result } = renderHook(() => useReport());
 
@@ -63,7 +74,7 @@ describe('useReport', () => {
       await result.current.generate(mockRequest);
     });
 
-    expect(result.current.result).toEqual(mockResponse);
+    expect(result.current.result).toEqual({ title: 'Race Day', report: 'It was great.' });
     expect(result.current.error).toBeNull();
   });
 
@@ -97,7 +108,7 @@ describe('useReport', () => {
 
   it('sends POST to correct endpoint with JSON body', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      Response.json({ title: 'T', report: 'R' }),
+      streamResponse('# T\n\nR'),
     );
 
     const { result } = renderHook(() => useReport());
@@ -109,14 +120,14 @@ describe('useReport', () => {
     expect(fetchSpy).toHaveBeenCalledWith('/api/report/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(mockRequest),
+      body: JSON.stringify({ ...mockRequest, images: [] }),
     });
   });
 
   it('clears previous result and error on new generation', async () => {
     vi.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(Response.json({ error: 'fail' }, { status: 500 }))
-      .mockResolvedValueOnce(Response.json({ title: 'OK', report: 'Body' }));
+      .mockResolvedValueOnce(streamResponse('# OK\n\nBody'));
 
     const { result } = renderHook(() => useReport());
 

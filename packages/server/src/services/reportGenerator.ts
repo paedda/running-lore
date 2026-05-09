@@ -1,7 +1,11 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { ReportRequest, ReportResponse, ReportTone } from '@running-lore/shared';
 
-const client = new Anthropic();
+let client: Anthropic | null = null;
+function getClient(): Anthropic {
+  if (!client) client = new Anthropic();
+  return client;
+}
 
 const SYSTEM_PROMPT = `You are a race report writer for running blogs. You write vivid, personal race reports that capture what it actually feels like to run a race.
 
@@ -61,41 +65,54 @@ export function parseResponse(text: string): ReportResponse {
   return { title, report };
 }
 
-export async function generateReport(request: ReportRequest): Promise<ReportResponse> {
+function buildUserContent(request: ReportRequest): Anthropic.MessageParam['content'] {
   const { images } = request;
-
-  const userContent: Anthropic.MessageParam['content'] = [];
+  const content: Anthropic.MessageParam['content'] = [];
 
   if (images && images.length > 0) {
     for (const img of images) {
-      userContent.push({
+      content.push({
         type: 'image',
-        source: {
-          type: 'base64',
-          media_type: img.mediaType,
-          data: img.data,
-        },
+        source: { type: 'base64', media_type: img.mediaType, data: img.data },
       });
     }
-    userContent.push({
+    content.push({
       type: 'text',
       text: `The runner has shared ${images.length} race photo${images.length > 1 ? 's' : ''} above. Reference what you can observe in them naturally within the report.\n\n${buildPrompt(request)}`,
     });
   } else {
-    userContent.push({ type: 'text', text: buildPrompt(request) });
+    content.push({ type: 'text', text: buildPrompt(request) });
   }
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
+  return content;
+}
+
+export async function streamReport(
+  request: ReportRequest,
+  onChunk: (text: string) => void,
+): Promise<void> {
+  console.log(`[report] streaming for "${request.activity.raceName}" tone=${request.tone} images=${request.images?.length ?? 0}`);
+
+  const stream = getClient().messages.stream({
+    model: 'claude-sonnet-4-5',
     max_tokens: 2500,
     system: SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: userContent }],
+    messages: [{ role: 'user', content: buildUserContent(request) }],
   });
 
-  const textBlock = message.content.find((block) => block.type === 'text');
-  if (!textBlock || textBlock.type !== 'text') {
-    throw new Error('No text content in response');
+  for await (const event of stream) {
+    if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
+      onChunk(event.delta.text);
+    }
   }
 
-  return parseResponse(textBlock.text);
+  const final = await stream.finalMessage();
+  console.log(`[report] done — input_tokens=${final.usage.input_tokens} output_tokens=${final.usage.output_tokens} stop=${final.stop_reason}`);
+}
+
+// Kept for tests
+export async function generateReport(request: ReportRequest): Promise<ReportResponse> {
+  let text = '';
+  await streamReport(request, (chunk) => { text += chunk; });
+  return parseResponse(text);
 }
