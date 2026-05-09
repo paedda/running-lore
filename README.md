@@ -168,3 +168,4 @@ npm test
 - [ ] WordPress publishing integration
 - [ ] Weather API enrichment by date/location
 - [ ] User accounts and subscription billing
+- [ ] Trying to add video to readme
