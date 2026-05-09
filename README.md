@@ -4,6 +4,8 @@ Every race has a story. Even the ugly ones.
 
 Turn your race data and personal notes into a blog-ready race report, powered by Claude.
 
+https://github.com/user-attachments/assets/97b91d14-5d9e-4eb4-9644-77d616e17197
+
 ![Running Lore form](docs/screenshot-form.png)
 
 ![Running Lore report](docs/screenshot-report.png)
